@@ -217,7 +217,7 @@ public class PrefetchConfigTest {
     public void json_documentExample() {
         // 设计文档 §3.4 原文样例
         String json = "{\"chat_id_1\":{\"mode\":0,\"maxSize\":536870912,\"quotaPct\":40,\"priority\":1,\"keep\":-1,\"depthDays\":7}}";
-        HashMap<Long, PrefetchConfig.ChatPrefetchSource> parsed = PrefetchSourcesJson.parse(json.replace("chat_id_1", "123"));
+        Map<Long, PrefetchConfig.ChatPrefetchSource> parsed = PrefetchSourcesJson.parse(json.replace("chat_id_1", "123"));
         assertEquals(1, parsed.size());
         PrefetchConfig.ChatPrefetchSource src = parsed.get(123L);
         assertEquals(PrefetchConfig.MODE_ALL, src.mode);
