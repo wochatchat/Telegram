@@ -102,10 +102,7 @@ public final class PrefetchSourcesJson {
 
     private static PrefetchConfig.ChatPrefetchSource parseSource(P p) {
         PrefetchConfig.ChatPrefetchSource src = new PrefetchConfig.ChatPrefetchSource();
-        p.skipWs();
-        if (!p.take('{')) {
-            return null;
-        }
+        // 调用方已消费外层 '{'
         p.skipWs();
         if (p.take('}')) {
             return src;

@@ -142,7 +142,8 @@ public class PrefetchConfigTest {
         src.keepDays = PrefetchConfig.KEEP_FOREVER;
         PrefetchConfig c = new PrefetchConfig();
         assertEquals(true, c.isKeepForever(src));
-        assertEquals(30, c.effectiveKeepDays(src));
+        // 永久保留：生效 keep = 0（清理器硬保护，永不过期）
+        assertEquals(PrefetchConfig.KEEP_FOREVER, c.effectiveKeepDays(src));
         src.keepDays = PrefetchConfig.KEEP_FOLLOW_GLOBAL;
         assertEquals(30, c.effectiveKeepDays(src));
     }
