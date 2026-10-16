@@ -10,6 +10,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.BatteryManager;
@@ -175,6 +176,7 @@ public class PrefetchScheduler extends BaseController {
         }
         started = true;
         registerReceivers();
+        registerConfigListener();
         scheduleNext();
     }
 
@@ -182,6 +184,41 @@ public class PrefetchScheduler extends BaseController {
         started = false;
         mainHandler.removeCallbacks(tickRunnable);
         unregisterReceivers();
+        unregisterConfigListener();
+    }
+
+    /**
+     * 配置变更热生效入口（设置页保存后调用；§六.3 参数直读）。
+     * 调度器每次 tick 均从 SharedPreferences 重新加载配置，这里只需立刻重评估
+     * 硬闸（暂停/恢复）与并发槽，无需重启。
+     */
+    public void onConfigChanged() {
+        mainHandler.post(tickRunnable);
+    }
+
+    /** 强引用持有防 GC（registerOnSharedPreferenceChangeListener 是弱引用注册） */
+    private final SharedPreferences.OnSharedPreferenceChangeListener configListener = new SharedPreferences.OnSharedPreferenceChangeListener() {
+        @Override
+        public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+            if (key != null && key.startsWith("prefetch_")) {
+                mainHandler.post(tickRunnable);
+            }
+        }
+    };
+
+    private void registerConfigListener() {
+        try {
+            PrefetchStore.prefs(currentAccount).registerOnSharedPreferenceChangeListener(configListener);
+        } catch (Exception e) {
+            FileLog.e(e);
+        }
+    }
+
+    private void unregisterConfigListener() {
+        try {
+            PrefetchStore.prefs(currentAccount).unregisterOnSharedPreferenceChangeListener(configListener);
+        } catch (Exception ignore) {
+        }
     }
 
     private void registerReceivers() {

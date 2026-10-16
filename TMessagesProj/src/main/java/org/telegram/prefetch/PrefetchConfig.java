@@ -6,10 +6,8 @@
 
 package org.telegram.prefetch;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -41,6 +39,7 @@ public class PrefetchConfig {
     public static final int KEEP_FOREVER = 0;
 
     public static final long MB = 1024L * 1024;
+    public static final long GB = 1024L * MB;
 
     /** 总开关，默认关 */
     public boolean enabled = false;
@@ -131,6 +130,80 @@ public class PrefetchConfig {
 
     public static long clampMaxFileSize(long v) {
         return Math.max(10 * MB, Math.min(2L * 1024 * MB, v));
+    }
+
+    // ------------------------------------------------------------------
+    // 设置页档位表（设计文档 §五 / §九；纯数据 + 纯函数，可 JVM 单测）
+    // ------------------------------------------------------------------
+
+    /** 预取限速档位：字节/秒，0 = 不限 */
+    public static final long[] SPEED_LIMIT_PRESETS = {0, 512 * 1024, MB, 2 * MB, 5 * MB, 10 * MB};
+
+    /** 允许时段档位：{startHour, endHour}，支持跨零点 */
+    public static final int[][] HOURS_PRESETS = {{0, 24}, {8, 22}, {22, 6}, {0, 6}};
+
+    /** 电量门槛档位：低于该电量暂停预取 */
+    public static final int[] BATTERY_PRESETS = {5, 10, 15, 20, 30, 50};
+
+    /** 月度蜂窝限额档位：字节，-1 = 不限 */
+    public static final long[] MONTHLY_LIMIT_PRESETS = {-1, MB, 2 * MB, 5 * MB, 10 * MB, 20 * MB};
+
+    /** 蜂窝小视频上限档位：字节 */
+    public static final long[] CELL_SMALL_SIZE_PRESETS = {10 * MB, 25 * MB, 50 * MB, 100 * MB, 200 * MB};
+
+    /** 档位索引：精确匹配返回下标，未命中返回 -1（自定义值） */
+    public static int indexOfLong(long[] presets, long v) {
+        for (int i = 0; i < presets.length; i++) {
+            if (presets[i] == v) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    public static int indexOfInt(int[] presets, int v) {
+        for (int i = 0; i < presets.length; i++) {
+            if (presets[i] == v) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    public static int indexOfHoursPreset(int start, int end) {
+        for (int i = 0; i < HOURS_PRESETS.length; i++) {
+            if (HOURS_PRESETS[i][0] == start && HOURS_PRESETS[i][1] == end) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /** 月份/文件大小格式化（纯函数，Locale.US 固定，供设置页与测试共用） */
+    public static String formatBytes(long bytes) {
+        if (bytes >= GB) {
+            long tenths = Math.round(bytes / (double) GB * 10);
+            if (tenths % 10 == 0) {
+                return String.format(Locale.US, "%d GB", tenths / 10);
+            }
+            return String.format(Locale.US, "%.1f GB", tenths / 10.0);
+        }
+        if (bytes >= MB) {
+            long tenths = Math.round(bytes / (double) MB * 10);
+            if (tenths % 10 == 0) {
+                return String.format(Locale.US, "%d MB", tenths / 10);
+            }
+            return String.format(Locale.US, "%.1f MB", tenths / 10.0);
+        }
+        return String.format(Locale.US, "%d KB", bytes / 1024);
+    }
+
+    /** 限速格式化：0 显示为不限 */
+    public static String formatSpeed(long bytesPerSec) {
+        if (bytesPerSec <= 0) {
+            return "∞";
+        }
+        return formatBytes(bytesPerSec) + "/s";
     }
 
     // ------------------------------------------------------------------
