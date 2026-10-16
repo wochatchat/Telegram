@@ -151,6 +151,18 @@ public class PrefetchConfig {
     /** 蜂窝小视频上限档位：字节 */
     public static final long[] CELL_SMALL_SIZE_PRESETS = {10 * MB, 25 * MB, 50 * MB, 100 * MB, 200 * MB};
 
+    /** 每聊天单文件上限档位：0 = 跟随全局 */
+    public static final long[] CHAT_MAX_SIZE_PRESETS = {0, 50 * MB, 100 * MB, 512 * MB, GB, 2L * GB};
+
+    /** 每聊天配额档位：占全局预算百分比 */
+    public static final int[] QUOTA_PRESETS = {5, 10, 20, 40, 60, 100};
+
+    /** 每聊天保留档位：KEEP_FOLLOW_GLOBAL(-1) / KEEP_FOREVER(0) / N 天 */
+    public static final int[] KEEP_PRESETS = {KEEP_FOLLOW_GLOBAL, KEEP_FOREVER, 7, 30, 90, 365};
+
+    /** 每聊天深度档位：0 = 跟随全局，其余为只囤最近 N 天 */
+    public static final int[] DEPTH_PRESETS = {0, 1, 3, 7, 14, 30};
+
     /** 档位索引：精确匹配返回下标，未命中返回 -1（自定义值） */
     public static int indexOfLong(long[] presets, long v) {
         for (int i = 0; i < presets.length; i++) {

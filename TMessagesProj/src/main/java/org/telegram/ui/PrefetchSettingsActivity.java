@@ -47,6 +47,7 @@ public class PrefetchSettingsActivity extends BaseFragment {
 
     private int generalHeaderRow;
     private int toggleRow;
+    private int sourcesRow;
     private int concurrencyRow;
     private int reservedSlotsRow;
     private int speedLimitRow;
@@ -86,6 +87,7 @@ public class PrefetchSettingsActivity extends BaseFragment {
         rowCount = 0;
         generalHeaderRow = rowCount++;
         toggleRow = rowCount++;
+        sourcesRow = rowCount++;
         concurrencyRow = rowCount++;
         reservedSlotsRow = rowCount++;
         speedLimitRow = rowCount++;
@@ -126,6 +128,8 @@ public class PrefetchSettingsActivity extends BaseFragment {
                 config.enabled = !config.enabled;
                 saveAndApply();
                 listAdapter.notifyItemChanged(toggleRow);
+            } else if (position == sourcesRow) {
+                presentFragment(new PrefetchSourcesActivity());
             } else if (position == concurrencyRow) {
                 showConcurrencyPicker();
             } else if (position == reservedSlotsRow) {
@@ -337,6 +341,7 @@ public class PrefetchSettingsActivity extends BaseFragment {
         public boolean isEnabled(RecyclerView.ViewHolder holder) {
             int position = holder.getAdapterPosition();
             return position == toggleRow
+                    || position == sourcesRow
                     || position == concurrencyRow
                     || position == reservedSlotsRow
                     || position == speedLimitRow
@@ -400,6 +405,8 @@ public class PrefetchSettingsActivity extends BaseFragment {
                     TextCheckCell cell = (TextCheckCell) holder.itemView;
                     if (position == toggleRow) {
                         cell.setTextAndCheck(LocaleController.getString(R.string.BackgroundPrefetch), config.enabled, true);
+                    } else if (position == sourcesRow) {
+                        cell.setTextAndValue(LocaleController.getString(R.string.PrefetchSources), sourcesValueText(), true);
                     } else if (position == wifiRow) {
                         cell.setTextAndCheck(LocaleController.getString(R.string.PrefetchAllowWifi), config.allowWifi, true);
                     } else if (position == cellularRow) {
@@ -452,13 +459,17 @@ public class PrefetchSettingsActivity extends BaseFragment {
             } else if (position == toggleRow || position == wifiRow || position == cellularRow || position == roamingRow
                     || position == cellSmallAllowedRow || position == nightHoardingRow || position == monthlyCellOnlyRow) {
                 return VIEW_TYPE_CHECK;
-            } else if (position == concurrencyRow || position == reservedSlotsRow || position == speedLimitRow
+            } else if (position == sourcesRow || position == concurrencyRow || position == reservedSlotsRow || position == speedLimitRow
                     || position == cellSmallSizeRow || position == hoursRow || position == batteryRow
                     || position == monthlyLimitRow || position == monthUsedRow) {
                 return VIEW_TYPE_SETTINGS;
             }
             return VIEW_TYPE_INFO;
         }
+    }
+
+    private String sourcesValueText() {
+        return String.format(Locale.US, LocaleController.getString(R.string.PrefetchSourcesValue), config.sources.size());
     }
 
     private String hoursValueText() {
