@@ -17,7 +17,7 @@ public class PrefetchScorerAndJanitorTest {
 
     private static final long NOW = 1_760_000_000_000L;
 
-    private PrefetchScorer.Env env(int netType, int hour, boolean charging) {
+    private PrefetchScorer.Env env(int netType, int hour, int batteryPct, boolean charging) {
         PrefetchScorer.Env env = new PrefetchScorer.Env();
         env.netType = netType;
         env.hourOfDay = hour;
