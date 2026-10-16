@@ -146,7 +146,7 @@ public class PrefetchConfig {
     public static final int[] BATTERY_PRESETS = {5, 10, 15, 20, 30, 50};
 
     /** 月度蜂窝限额档位：字节，-1 = 不限 */
-    public static final long[] MONTHLY_LIMIT_PRESETS = {-1, MB, 2 * MB, 5 * MB, 10 * MB, 20 * MB};
+    public static final long[] MONTHLY_LIMIT_PRESETS = {-1, GB, 2 * GB, 5 * GB, 10 * GB, 20 * GB};
 
     /** 蜂窝小视频上限档位：字节 */
     public static final long[] CELL_SMALL_SIZE_PRESETS = {10 * MB, 25 * MB, 50 * MB, 100 * MB, 200 * MB};
