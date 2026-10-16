@@ -214,6 +214,8 @@ public class MessageObject {
     public boolean isStoryReactionPush;
     public boolean isStoryPush, isStoryMentionPush, isStoryPushHidden, isLiveStoryPush;
     public boolean isOauthPush;
+    /** 预取任务标记：调度器入队时打标，区分自动预取与手动下载（设计文档 §4.4） */
+    public boolean prefetch;
     public boolean putInDownloadsStore;
     public boolean isDownloadingFile;
     public boolean forcePlayEffect;

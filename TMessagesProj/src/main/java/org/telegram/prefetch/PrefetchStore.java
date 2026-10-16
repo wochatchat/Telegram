@@ -8,7 +8,10 @@ package org.telegram.prefetch;
 
 import android.content.SharedPreferences;
 
+import org.telegram.messenger.FileLog;
 import org.telegram.messenger.MessagesController;
+
+import java.util.Locale;
 
 /**
  * 预下载配置持久化。
@@ -37,6 +40,7 @@ public final class PrefetchStore {
     private static final String KEY_DEFAULT_MAX_SIZE = "prefetch_default_max_size";
     private static final String KEY_DEFAULT_QUOTA = "prefetch_default_quota_pct";
     private static final String KEY_DEFAULT_KEEP_DAYS = "prefetch_default_keep_days";
+    private static final String KEY_MONTH_USED_PREFIX = "prefetch_month_used_";
 
     private PrefetchStore() {
     }
@@ -71,8 +75,38 @@ public final class PrefetchStore {
         return c;
     }
 
-    public static void save(int account, PrefetchConfig c) {
-        prefs(account).edit()
+    // ------------------------------------------------------------------
+    // 月度蜂窝用量计数（月度限额硬闸的数据来源，设计文档 §5.3）
+    // ------------------------------------------------------------------
+
+    public static String monthKey() {
+        java.util.Calendar cal = java.util.Calendar.getInstance();
+        return String.format(Locale.US, "%04d%02d",
+                cal.get(java.util.Calendar.YEAR), cal.get(java.util.Calendar.MONTH) + 1);
+    }
+
+    public static long getMonthCellularUsed(int account) {
+        try {
+            return prefs(account).getLong(KEY_MONTH_USED_PREFIX + monthKey(), 0);
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    public static void addMonthCellularUsed(int account, long bytes) {
+        if (bytes <= 0) {
+            return;
+        }
+        try {
+            String key = KEY_MONTH_USED_PREFIX + monthKey();
+            SharedPreferences p = prefs(account);
+            p.edit().putLong(key, p.getLong(key, 0) + bytes).apply();
+        } catch (Exception e) {
+            FileLog.e(e);
+        }
+    }
+
+    public static void save(int account, PrefetchConfig c) {        prefs(account).edit()
                 .putBoolean(KEY_ENABLED, c.enabled)
                 .putInt(KEY_CONCURRENCY, PrefetchConfig.clampConcurrency(c.concurrency))
                 .putInt(KEY_RESERVED_SLOTS, PrefetchConfig.clampReservedUserSlots(c.reservedUserSlots))

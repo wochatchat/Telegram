@@ -328,6 +328,8 @@ public class DownloadController extends BaseController implements NotificationCe
             getNotificationCenter().addObserver(DownloadController.this, NotificationCenter.httpFileDidLoad);
             getNotificationCenter().addObserver(DownloadController.this, NotificationCenter.httpFileDidFailedLoad);
             loadAutoDownloadConfig(false);
+            // 预取调度器随下载控制器启动（预取引擎 R2 挂接点）
+            org.telegram.prefetch.PrefetchScheduler.getInstance(currentAccount).start();
         });
 
         BroadcastReceiver networkStateReceiver = new BroadcastReceiver() {
