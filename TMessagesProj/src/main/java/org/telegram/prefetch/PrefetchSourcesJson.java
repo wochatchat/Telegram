@@ -178,6 +178,17 @@ public final class PrefetchSourcesJson {
             return i < s.length() ? s.charAt(i) : -1;
         }
 
+        void skipWs() {
+            while (i < s.length()) {
+                char c = s.charAt(i);
+                if (c == ' ' || c == '\t' || c == '\n' || c == '\r') {
+                    i++;
+                } else {
+                    break;
+                }
+            }
+        }
+
         boolean take(char c) {
             skipWs();
             if (i < s.length() && s.charAt(i) == c) {

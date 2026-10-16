@@ -84,7 +84,6 @@ public class PrefetchSettingsActivity extends BaseFragment {
                 config.enabled = !config.enabled;
                 PrefetchStore.save(currentAccount, config);
                 listAdapter.notifyItemChanged(toggleRow);
-                onEnabledChanged();
             }
         });
 
