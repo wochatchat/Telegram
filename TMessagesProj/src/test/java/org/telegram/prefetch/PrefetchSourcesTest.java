@@ -83,17 +83,18 @@ public class PrefetchSourcesTest {
     @Test
     public void testSorting() {
         List<PrefetchSourcesLogic.Entry> all = sample();
-        // 已勾选优先（-102 唯一勾选，排第一），其余按时间降序
+        // 已勾选优先（-102/-100 勾选，组内按时间降序），未勾选再按时间降序
         List<PrefetchSourcesLogic.Entry> out = new ArrayList<>(all);
         PrefetchSourcesLogic.sortEntries(out, PrefetchSourcesLogic.SORT_SELECTED_FIRST);
         assertEquals(-102, out.get(0).dialogId);
-        assertEquals(-101, out.get(1).dialogId);
+        assertEquals(-100, out.get(1).dialogId);
+        assertEquals(-101, out.get(2).dialogId);
 
         // 字母序（不区分大小写）
         out = new ArrayList<>(all);
         PrefetchSourcesLogic.sortEntries(out, PrefetchSourcesLogic.SORT_ALPHA);
         assertEquals("Alpha", out.get(0).title);
-        assertEquals("beta", out.get(1).title);
+        assertEquals("beta group", out.get(1).title);
         assertEquals("Gamma", out.get(2).title);
         assertEquals("delta", out.get(3).title);
 
