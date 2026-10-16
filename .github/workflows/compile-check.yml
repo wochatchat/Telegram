@@ -12,6 +12,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Init media modules submodule
+        run: git submodule update --init --depth 1 TMessagesProj_Modules/media
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
