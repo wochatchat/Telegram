@@ -17,4 +17,6 @@ public class DownloadObject {
     public boolean secret;
     public boolean forceCache;
     public String parent;
+    /** 预取任务标记：区分"自动预取"和"到达即下/手动"两类条目（控制页设计文档 §4.4） */
+    public boolean prefetch;
 }

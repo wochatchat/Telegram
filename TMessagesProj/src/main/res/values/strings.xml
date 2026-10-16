@@ -3548,6 +3548,8 @@
     <string name="LoginOrSingInWithGoogle">or</string>
     <!--data settings-->
     <string name="DataSettings">Data and Storage</string>
+    <string name="BackgroundPrefetch">Background Video Prefetch</string>
+    <string name="BackgroundPrefetchInfo">Pre-download videos from chats and channels you choose, over Wi-Fi, so they open instantly. You can pick sources, check the queue and control traffic.</string>
     <string name="DataUsage">Disk and network usage</string>
     <string name="StorageUsage">Storage Usage</string>
     <string name="StorageCleared">Storage Cleared</string>
