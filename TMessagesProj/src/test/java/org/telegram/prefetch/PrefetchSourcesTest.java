@@ -95,8 +95,8 @@ public class PrefetchSourcesTest {
         PrefetchSourcesLogic.sortEntries(out, PrefetchSourcesLogic.SORT_ALPHA);
         assertEquals("Alpha", out.get(0).title);
         assertEquals("beta group", out.get(1).title);
-        assertEquals("Gamma", out.get(2).title);
-        assertEquals("delta", out.get(3).title);
+        assertEquals("delta", out.get(2).title);
+        assertEquals("Gamma", out.get(3).title);
 
         // 默认最近更新
         out = new ArrayList<>(all);
