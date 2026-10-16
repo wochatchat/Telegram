@@ -405,8 +405,6 @@ public class PrefetchSettingsActivity extends BaseFragment {
                     TextCheckCell cell = (TextCheckCell) holder.itemView;
                     if (position == toggleRow) {
                         cell.setTextAndCheck(LocaleController.getString(R.string.BackgroundPrefetch), config.enabled, true);
-                    } else if (position == sourcesRow) {
-                        cell.setTextAndValue(LocaleController.getString(R.string.PrefetchSources), sourcesValueText(), true);
                     } else if (position == wifiRow) {
                         cell.setTextAndCheck(LocaleController.getString(R.string.PrefetchAllowWifi), config.allowWifi, true);
                     } else if (position == cellularRow) {
@@ -424,7 +422,9 @@ public class PrefetchSettingsActivity extends BaseFragment {
                 }
                 case VIEW_TYPE_SETTINGS: {
                     TextSettingsCell cell = (TextSettingsCell) holder.itemView;
-                    if (position == concurrencyRow) {
+                    if (position == sourcesRow) {
+                        cell.setTextAndValue(LocaleController.getString(R.string.PrefetchSources), sourcesValueText(), true);
+                    } else if (position == concurrencyRow) {
                         cell.setTextAndValue(LocaleController.getString(R.string.PrefetchConcurrency), String.valueOf(config.concurrency), true);
                     } else if (position == reservedSlotsRow) {
                         cell.setTextAndValue(LocaleController.getString(R.string.PrefetchReservedSlots), String.valueOf(config.reservedUserSlots), true);

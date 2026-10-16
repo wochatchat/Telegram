@@ -170,7 +170,7 @@ public class PrefetchSourcesActivity extends BaseFragment {
         selectedCountTextView.setTypeface(AndroidUtilities.bold());
         selectedCountTextView.setTextColor(getThemedColor(Theme.key_actionBarActionModeDefaultIcon));
         actionMode.addView(selectedCountTextView, LayoutHelper.createLinear(0, LayoutHelper.MATCH_PARENT, 1.0f, 18, 0, 0, 0));
-        selectedCountTextView.setOnTouchListener(v -> true);
+        selectedCountTextView.setOnTouchListener((v, event) -> true);
         ActionBarMenuItem batchItem = actionMode.addItem(0, R.drawable.ic_ab_other);
         batchItem.addSubItem(BATCH_ID_SELECT_ALL, LocaleController.getString(R.string.PrefetchBatchSelectAll));
         batchItem.addSubItem(BATCH_ID_SELECT_NONE, LocaleController.getString(R.string.PrefetchBatchSelectNone));
@@ -198,7 +198,7 @@ public class PrefetchSourcesActivity extends BaseFragment {
 
         fragmentView = new FrameLayout(context);
         fragmentView.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundGray));
-        fragmentView.addView(emptyView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
+        ((FrameLayout) fragmentView).addView(emptyView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
         ((FrameLayout) fragmentView).addView(listView, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
         return fragmentView;
