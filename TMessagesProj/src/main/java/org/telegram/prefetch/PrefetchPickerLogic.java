@@ -21,8 +21,8 @@ public final class PrefetchPickerLogic {
     /** 连续同一天的行区间 [start, end)（输入按时间降序排列）。 */
     public static final class Section {
         public final long dayKey;
-        public final int start;
-        public final int end;
+        public int start;
+        public int end;
 
         public Section(long dayKey, int start, int end) {
             this.dayKey = dayKey;
