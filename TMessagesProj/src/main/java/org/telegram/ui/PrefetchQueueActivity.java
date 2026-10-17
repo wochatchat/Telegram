@@ -807,7 +807,7 @@ public class PrefetchQueueActivity extends BaseFragment implements NotificationC
             addView(divider, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 1 / (float) AndroidUtilities.density, Gravity.BOTTOM | Gravity.LEFT, 16, 0, 0, 0));
         }
 
-        void setItem(PrefetchQueueLogic.Item it, boolean checked, boolean divider) {
+        void setItem(PrefetchQueueLogic.Item it, boolean checked, boolean needDivider) {
             titleTextView.setText(it.title);
             String sizeText;
             if (it.status == PrefetchQueueLogic.STATUS_DOWNLOADING && it.size > 0) {
@@ -823,7 +823,7 @@ public class PrefetchQueueActivity extends BaseFragment implements NotificationC
             int statusColor;
             switch (it.status) {
                 case PrefetchQueueLogic.STATUS_FAILED:
-                    statusColor = Theme.getColor(Theme.key_windowBackgroundWhiteRedText);
+                    statusColor = Theme.getColor(Theme.key_text_RedRegular);
                     break;
                 case PrefetchQueueLogic.STATUS_DOWNLOADING:
                     statusColor = Theme.getColor(Theme.key_windowBackgroundWhiteValueText);
@@ -841,11 +841,11 @@ public class PrefetchQueueActivity extends BaseFragment implements NotificationC
                 progressBar.setVisibility(INVISIBLE);
             }
             if (checked) {
-                setBackgroundColor(Theme.getColor(Theme.key_selectedBackground));
+                setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundChecked));
             } else {
                 setBackgroundDrawable(Theme.getSelectorDrawable(false));
             }
-            divider.setVisibility(divider ? VISIBLE : INVISIBLE);
+            this.divider.setVisibility(needDivider ? VISIBLE : INVISIBLE);
         }
     }
 }
