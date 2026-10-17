@@ -453,6 +453,37 @@ public class PrefetchScheduler extends BaseController {
         });
     }
 
+    /**
+     * 移除单个队列任务（队列页删除操作）：cancelLoadFile(deleteFile=true) 清半成品分片（§八.2），
+     * 并从 downloadingFiles 与 downloading_documents 表移除。预取/手动任务通用。
+     */
+    public void removeTask(MessageObject mo) {
+        if (mo == null || mo.getDocument() == null) {
+            return;
+        }
+        AndroidUtilities.runOnUIThread(() -> {
+            ArrayList<MessageObject> list = DownloadController.getInstance(currentAccount).downloadingFiles;
+            list.remove(mo);
+            FileLoader.getInstance(currentAccount).cancelLoadFile(mo.getDocument(), true);
+            final long docId = mo.getDocument().id;
+            MessagesStorage.getInstance(currentAccount).getStorageQueue().postRunnable(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        org.telegram.SQLite.SQLitePreparedStatement state =
+                                MessagesStorage.getInstance(currentAccount).getDatabase()
+                                        .executeFast("DELETE FROM downloading_documents WHERE id = ?");
+                        state.bindLong(1, docId);
+                        state.step();
+                        state.dispose();
+                    } catch (Exception e) {
+                        FileLog.e(e);
+                    }
+                }
+            });
+        });
+    }
+
     // ------------------------------------------------------------------
     // 环境快照（UI 线程采集）
     // ------------------------------------------------------------------

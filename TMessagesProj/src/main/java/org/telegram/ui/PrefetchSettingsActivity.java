@@ -15,7 +15,9 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import org.telegram.messenger.DownloadController;
 import org.telegram.messenger.LocaleController;
+import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.R;
 import org.telegram.prefetch.PrefetchConfig;
 import org.telegram.prefetch.PrefetchScheduler;
@@ -30,6 +32,7 @@ import org.telegram.ui.Cells.TextInfoPrivacyCell;
 import org.telegram.ui.Cells.TextSettingsCell;
 import org.telegram.ui.Components.RecyclerListView;
 
+import java.util.ArrayList;
 import java.util.Locale;
 
 /**
@@ -48,6 +51,7 @@ public class PrefetchSettingsActivity extends BaseFragment {
     private int generalHeaderRow;
     private int toggleRow;
     private int sourcesRow;
+    private int queueRow;
     private int concurrencyRow;
     private int reservedSlotsRow;
     private int speedLimitRow;
@@ -88,6 +92,7 @@ public class PrefetchSettingsActivity extends BaseFragment {
         generalHeaderRow = rowCount++;
         toggleRow = rowCount++;
         sourcesRow = rowCount++;
+        queueRow = rowCount++;
         concurrencyRow = rowCount++;
         reservedSlotsRow = rowCount++;
         speedLimitRow = rowCount++;
@@ -130,6 +135,8 @@ public class PrefetchSettingsActivity extends BaseFragment {
                 listAdapter.notifyItemChanged(toggleRow);
             } else if (position == sourcesRow) {
                 presentFragment(new PrefetchSourcesActivity());
+            } else if (position == queueRow) {
+                presentFragment(new PrefetchQueueActivity());
             } else if (position == concurrencyRow) {
                 showConcurrencyPicker();
             } else if (position == reservedSlotsRow) {
@@ -342,6 +349,7 @@ public class PrefetchSettingsActivity extends BaseFragment {
             int position = holder.getAdapterPosition();
             return position == toggleRow
                     || position == sourcesRow
+                    || position == queueRow
                     || position == concurrencyRow
                     || position == reservedSlotsRow
                     || position == speedLimitRow
@@ -424,6 +432,8 @@ public class PrefetchSettingsActivity extends BaseFragment {
                     TextSettingsCell cell = (TextSettingsCell) holder.itemView;
                     if (position == sourcesRow) {
                         cell.setTextAndValue(LocaleController.getString(R.string.PrefetchSources), sourcesValueText(), true);
+                    } else if (position == queueRow) {
+                        cell.setTextAndValue(LocaleController.getString(R.string.PrefetchQueue), queueValueText(), true);
                     } else if (position == concurrencyRow) {
                         cell.setTextAndValue(LocaleController.getString(R.string.PrefetchConcurrency), String.valueOf(config.concurrency), true);
                     } else if (position == reservedSlotsRow) {
@@ -459,13 +469,24 @@ public class PrefetchSettingsActivity extends BaseFragment {
             } else if (position == toggleRow || position == wifiRow || position == cellularRow || position == roamingRow
                     || position == cellSmallAllowedRow || position == nightHoardingRow || position == monthlyCellOnlyRow) {
                 return VIEW_TYPE_CHECK;
-            } else if (position == sourcesRow || position == concurrencyRow || position == reservedSlotsRow || position == speedLimitRow
+            } else if (position == sourcesRow || position == queueRow || position == concurrencyRow || position == reservedSlotsRow || position == speedLimitRow
                     || position == cellSmallSizeRow || position == hoursRow || position == batteryRow
                     || position == monthlyLimitRow || position == monthUsedRow) {
                 return VIEW_TYPE_SETTINGS;
             }
             return VIEW_TYPE_INFO;
         }
+    }
+
+    private String queueValueText() {
+        ArrayList<MessageObject> list = DownloadController.getInstance(currentAccount).downloadingFiles;
+        int n = 0;
+        for (int a = 0; a < list.size(); a++) {
+            if (list.get(a).prefetch) {
+                n++;
+            }
+        }
+        return n > 0 ? String.valueOf(n) : "";
     }
 
     private String sourcesValueText() {
