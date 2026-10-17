@@ -1,0 +1,58 @@
+name: Build Test APK
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: telegram-build-test
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+
+      # 完整拉取所有子模块（jni/* 第三方库是 native 编译必需）
+      - name: Init all submodules
+        run: git submodule update --init --depth 1
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL || true
+          df -h /
+
+      - name: Install SDK components
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null 2>&1 || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "platforms;android-36" "build-tools;36.0.0" "ndk;27.2.12479018" "cmake;3.22.1" > /dev/null
+
+      # 测试包只出 arm64-v8a，native 编译耗时约为全 ABI 的 1/4
+      - name: Limit ABIs to arm64-v8a
+        run: |
+          sed -i 's/abiFilters "armeabi-v7a", "arm64-v8a", "x86", "x86_64"/abiFilters "arm64-v8a"/' TMessagesProj_App/build.gradle
+          grep -n 'abiFilters' TMessagesProj_App/build.gradle
+
+      - name: Build afat debug APK (signed by in-repo test keystore)
+        run: ./gradlew :TMessagesProj_App:assembleAfatDebug --parallel --stacktrace --no-daemon
+
+      - name: Collect APK
+        run: |
+          ls -lh TMessagesProj_App/build/outputs/apk/afat/debug/
+          mkdir -p apk_out
+          cp TMessagesProj_App/build/outputs/apk/afat/debug/*.apk apk_out/
+          echo "sha256:" | tee apk_out/SHA256SUMS.txt
+          sha256sum apk_out/*.apk >> apk_out/SHA256SUMS.txt || true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: telegram-test-apk
+          path: apk_out/*
+          if-no-files-found: error
+          retention-days: 30
