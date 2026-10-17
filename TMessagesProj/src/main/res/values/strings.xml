@@ -3639,7 +3639,14 @@
     <string name="PrefetchGateNetwork">Waiting for network</string>
     <string name="PrefetchGateOffline">No internet connection</string>
     <string name="PrefetchGateMonthly">Monthly limit reached</string>
-    <string name="PrefetchGateDisabled">Prefetch disabled</string>
+    <string name="PrefetchGateDisabled">Paused (prefetch off)</string>
+    <string name="PrefetchManualPicker">Manually pick videos</string>
+    <string name="PrefetchManualPickerInfo">Browse videos from any chat, select the ones you need and download them right away. Manually picked videos show up as manual in the queue and never trigger auto prefetching.</string>
+    <string name="PrefetchPickChatTitle">Select chat</string>
+    <string name="PrefetchPickLoading">Loading chats…</string>
+    <string name="PrefetchPickEmptyChat">No videos found in this chat</string>
+    <string name="PrefetchPickDownload">Download %1$d videos</string>
+    <string name="PrefetchPickDownloadOne">Download 1 video</string>
     <string name="DataUsage">Disk and network usage</string>
     <string name="StorageUsage">Storage Usage</string>
     <string name="StorageCleared">Storage Cleared</string>

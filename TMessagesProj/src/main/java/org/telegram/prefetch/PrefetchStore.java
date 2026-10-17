@@ -41,6 +41,10 @@ public final class PrefetchStore {
     private static final String KEY_DEFAULT_QUOTA = "prefetch_default_quota_pct";
     private static final String KEY_DEFAULT_KEEP_DAYS = "prefetch_default_keep_days";
     private static final String KEY_MONTH_USED_PREFIX = "prefetch_month_used_";
+    /** 持久化"预取任务 documentId 集合"（重启后恢复 prefetch 标记的依据，设计文档 §八） */
+    private static final String KEY_PREFETCH_DOC_IDS = "prefetch_doc_ids";
+    /** doc-id 集合上限（防无限增长，超出按加入顺序淘汰最旧） */
+    public static final int MAX_PREFETCH_DOC_IDS = 500;
 
     private PrefetchStore() {
     }
@@ -103,6 +107,87 @@ public final class PrefetchStore {
             p.edit().putLong(key, p.getLong(key, 0) + bytes).apply();
         } catch (Exception e) {
             FileLog.e(e);
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // 预取 doc-id 集合持久化（重启恢复 prefetch 标记，§八）
+    // ------------------------------------------------------------------
+
+    /** 编码：按加入顺序逗号连接；超上限从头部（最旧）淘汰。纯函数，可 JVM 单测。 */
+    public static String encodeDocIds(java.util.Collection<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return "";
+        }
+        java.util.LinkedHashSet<Long> ordered = new java.util.LinkedHashSet<>(ids);
+        while (ordered.size() > MAX_PREFETCH_DOC_IDS) {
+            java.util.Iterator<Long> it = ordered.iterator();
+            it.next();
+            it.remove();
+        }
+        StringBuilder sb = new StringBuilder();
+        for (Long id : ordered) {
+            if (sb.length() > 0) {
+                sb.append(',');
+            }
+            sb.append(id);
+        }
+        return sb.toString();
+    }
+
+    /** 解码：容忍脏数据（非法片段跳过）。纯函数，可 JVM 单测。 */
+    public static java.util.LinkedHashSet<Long> decodeDocIds(String s) {
+        java.util.LinkedHashSet<Long> out = new java.util.LinkedHashSet<>();
+        if (s == null || s.isEmpty()) {
+            return out;
+        }
+        for (String part : s.split(",")) {
+            part = part.trim();
+            if (part.isEmpty()) {
+                continue;
+            }
+            try {
+                out.add(Long.parseLong(part));
+            } catch (NumberFormatException ignore) {
+            }
+        }
+        return out;
+    }
+
+    public static java.util.LinkedHashSet<Long> getPrefetchDocIds(int account) {
+        try {
+            return decodeDocIds(prefs(account).getString(KEY_PREFETCH_DOC_IDS, null));
+        } catch (Exception e) {
+            FileLog.e(e);
+            return new java.util.LinkedHashSet<>();
+        }
+    }
+
+    public static void savePrefetchDocIds(int account, java.util.Collection<Long> ids) {
+        try {
+            prefs(account).edit().putString(KEY_PREFETCH_DOC_IDS, encodeDocIds(ids)).apply();
+        } catch (Exception e) {
+            FileLog.e(e);
+        }
+    }
+
+    public static void addPrefetchDocIds(int account, java.util.Collection<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return;
+        }
+        java.util.LinkedHashSet<Long> all = getPrefetchDocIds(account);
+        if (all.addAll(ids)) {
+            savePrefetchDocIds(account, all);
+        }
+    }
+
+    public static void removePrefetchDocIds(int account, java.util.Collection<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return;
+        }
+        java.util.LinkedHashSet<Long> all = getPrefetchDocIds(account);
+        if (all.removeAll(ids)) {
+            savePrefetchDocIds(account, all);
         }
     }
 

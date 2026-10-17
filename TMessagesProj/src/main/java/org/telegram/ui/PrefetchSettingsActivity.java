@@ -52,6 +52,8 @@ public class PrefetchSettingsActivity extends BaseFragment {
     private int toggleRow;
     private int sourcesRow;
     private int queueRow;
+    private int manualPickerRow;
+    private int storageRow;
     private int concurrencyRow;
     private int reservedSlotsRow;
     private int speedLimitRow;
@@ -93,6 +95,8 @@ public class PrefetchSettingsActivity extends BaseFragment {
         toggleRow = rowCount++;
         sourcesRow = rowCount++;
         queueRow = rowCount++;
+        manualPickerRow = rowCount++;
+        storageRow = rowCount++;
         concurrencyRow = rowCount++;
         reservedSlotsRow = rowCount++;
         speedLimitRow = rowCount++;
@@ -137,6 +141,10 @@ public class PrefetchSettingsActivity extends BaseFragment {
                 presentFragment(new PrefetchSourcesActivity());
             } else if (position == queueRow) {
                 presentFragment(new PrefetchQueueActivity());
+            } else if (position == manualPickerRow) {
+                presentFragment(new PrefetchManualPickActivity());
+            } else if (position == storageRow) {
+                presentFragment(new CacheControlActivity());
             } else if (position == concurrencyRow) {
                 showConcurrencyPicker();
             } else if (position == reservedSlotsRow) {
@@ -350,6 +358,8 @@ public class PrefetchSettingsActivity extends BaseFragment {
             return position == toggleRow
                     || position == sourcesRow
                     || position == queueRow
+                    || position == manualPickerRow
+                    || position == storageRow
                     || position == concurrencyRow
                     || position == reservedSlotsRow
                     || position == speedLimitRow
@@ -434,6 +444,10 @@ public class PrefetchSettingsActivity extends BaseFragment {
                         cell.setTextAndValue(LocaleController.getString(R.string.PrefetchSources), sourcesValueText(), true);
                     } else if (position == queueRow) {
                         cell.setTextAndValue(LocaleController.getString(R.string.PrefetchQueue), queueValueText(), true);
+                    } else if (position == manualPickerRow) {
+                        cell.setTextAndValue(LocaleController.getString(R.string.PrefetchManualPicker), "", true);
+                    } else if (position == storageRow) {
+                        cell.setTextAndValue(LocaleController.getString(R.string.StorageUsage), "", true);
                     } else if (position == concurrencyRow) {
                         cell.setTextAndValue(LocaleController.getString(R.string.PrefetchConcurrency), String.valueOf(config.concurrency), true);
                     } else if (position == reservedSlotsRow) {

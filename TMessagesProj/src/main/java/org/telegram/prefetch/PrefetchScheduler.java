@@ -132,6 +132,7 @@ public class PrefetchScheduler extends BaseController {
                     @Override
                     public void run() {
                         int enqueued = 0;
+                        ArrayList<Long> enqueuedDocIds = new ArrayList<>();
                         for (int a = 0; a < msgs.size() && enqueued < budget; a++) {
                             TLRPC.Message msg = msgs.get(a);
                             if (msg == null || msg.media == null || msg.media.document == null) {
@@ -157,7 +158,12 @@ public class PrefetchScheduler extends BaseController {
                             mo.prefetch = true;
                             FileLoader.getInstance(currentAccount)
                                     .loadFile(mo.getDocument(), mo, FileLoader.PRIORITY_LOW, 0);
+                            enqueuedDocIds.add(msg.media.document.id);
                             enqueued++;
+                        }
+                        if (!enqueuedDocIds.isEmpty()) {
+                            // 持久化 prefetch 标记：重启后 downloading_documents 恢复的条目据此回预取态（§八）
+                            PrefetchStore.addPrefetchDocIds(currentAccount, enqueuedDocIds);
                         }
                     }
                 });
@@ -177,6 +183,7 @@ public class PrefetchScheduler extends BaseController {
         started = true;
         registerReceivers();
         registerConfigListener();
+        restorePrefetchFlags();
         scheduleNext();
     }
 
@@ -307,6 +314,8 @@ public class PrefetchScheduler extends BaseController {
     }
 
     private void doTick() {
+        // 应用刚启动时 downloadingFiles 可能尚未从 DB 装载完成，每次 tick 轻量重标一遍（幂等 O(n)）
+        restorePrefetchFlags();
         PrefetchConfig cfg = PrefetchStore.load(currentAccount);
         PrefetchScorer.Env env = buildEnv(cfg);
         String gate = PrefetchScorer.checkHardGates(cfg, env);
@@ -374,6 +383,38 @@ public class PrefetchScheduler extends BaseController {
     }
 
     // ------------------------------------------------------------------
+    // 重启恢复（§八：预取任务回排队态，沿用 downloading_documents 持久化）
+    // ------------------------------------------------------------------
+
+    /**
+     * 从 DB 恢复的 MessageObject 不带 prefetch 内存标记，据此持久化集合补标；
+     * 补标后 resumeActivePrefetch/pauseActivePrefetch 即可按硬闸正常管理这些任务。
+     */
+    public void restorePrefetchFlags() {
+        AndroidUtilities.runOnUIThread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    java.util.Set<Long> ids = PrefetchStore.getPrefetchDocIds(currentAccount);
+                    if (ids.isEmpty()) {
+                        return;
+                    }
+                    ArrayList<MessageObject> list = DownloadController.getInstance(currentAccount).downloadingFiles;
+                    for (int a = 0; a < list.size(); a++) {
+                        MessageObject mo = list.get(a);
+                        TLRPC.Document doc = mo.getDocument();
+                        if (doc != null && ids.contains(doc.id)) {
+                            mo.prefetch = true;
+                        }
+                    }
+                } catch (Exception e) {
+                    FileLog.e(e);
+                }
+            }
+        });
+    }
+
+    // ------------------------------------------------------------------
     // 暂停 / 恢复 / 移除（条件变化，设计文档 §3.4）
     // ------------------------------------------------------------------
 
@@ -431,6 +472,7 @@ public class PrefetchScheduler extends BaseController {
                 if (docIds.isEmpty()) {
                     return;
                 }
+                PrefetchStore.removePrefetchDocIds(currentAccount, docIds);
                 MessagesStorage.getInstance(currentAccount).getStorageQueue().postRunnable(new Runnable() {
                     @Override
                     public void run() {
@@ -466,6 +508,9 @@ public class PrefetchScheduler extends BaseController {
             list.remove(mo);
             FileLoader.getInstance(currentAccount).cancelLoadFile(mo.getDocument(), true);
             final long docId = mo.getDocument().id;
+            ArrayList<Long> docIdList = new ArrayList<>();
+            docIdList.add(docId);
+            PrefetchStore.removePrefetchDocIds(currentAccount, docIdList);
             MessagesStorage.getInstance(currentAccount).getStorageQueue().postRunnable(new Runnable() {
                 @Override
                 public void run() {

@@ -226,7 +226,7 @@ public class PrefetchQueueActivity extends BaseFragment implements NotificationC
             it.size = doc.size;
             Long loaded = loadedBytes.get(fileName);
             it.loaded = loaded != null ? loaded : 0;
-            it.prefetch = mo.prefetch;
+            it.prefetch = mo.prefetch || PrefetchStore.getPrefetchDocIds(currentAccount).contains(doc.id);
             File path = fl.getPathToMessage(mo.messageOwner);
             it.status = PrefetchQueueLogic.statusFor(
                     path != null && path.exists(),
@@ -376,6 +376,13 @@ public class PrefetchQueueActivity extends BaseFragment implements NotificationC
         }
         if (!failed) {
             done.status = PrefetchQueueLogic.STATUS_COMPLETED;
+            // 预取任务完成：从持久化集合移除，防止重启后误标
+            MessageObject doneMo = moByFileName.get(fileName);
+            if (doneMo != null && doneMo.getDocument() != null) {
+                ArrayList<Long> ids = new ArrayList<>();
+                ids.add(doneMo.getDocument().id);
+                PrefetchStore.removePrefetchDocIds(currentAccount, ids);
+            }
         } else {
             done.status = PrefetchQueueLogic.STATUS_FAILED;
         }
