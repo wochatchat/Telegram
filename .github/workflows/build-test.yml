@@ -40,7 +40,10 @@ jobs:
           grep -n 'abiFilters' TMessagesProj_App/build.gradle
 
       - name: Build afat debug APK (signed by in-repo test keystore)
-        run: ./gradlew :TMessagesProj_App:assembleAfatDebug --parallel --stacktrace --no-daemon
+        run: >-
+          ./gradlew :TMessagesProj_App:assembleAfatDebug --parallel --stacktrace --no-daemon
+          -PTELEGRAM_API_ID=${{ secrets.TELEGRAM_API_ID }}
+          -PTELEGRAM_API_HASH=${{ secrets.TELEGRAM_API_HASH }}
 
       - name: Collect APK
         run: |

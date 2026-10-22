@@ -144,6 +144,12 @@ android {
 
         multiDexEnabled true
 
+        // Custom api_id/api_hash for forks (avoids API_ID_PUBLISHED_FLOOD on production backend).
+        // Injected via -PTELEGRAM_API_ID / -PTELEGRAM_API_HASH (CI reads them from repo secrets);
+        // 0/empty means "use the defaults hardcoded in BuildVars".
+        buildConfigField "int", "APP_ID_OVERRIDE", (project.findProperty("TELEGRAM_API_ID") ?: "0")
+        buildConfigField "String", "APP_HASH_OVERRIDE", "\"${project.findProperty("TELEGRAM_API_HASH") ?: ""}\""
+
         externalNativeBuild {
             cmake {
                 version '3.22.1'
