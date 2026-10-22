@@ -42,6 +42,7 @@ import java.io.OutputStreamWriter;
 import java.lang.reflect.Field;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.ArrayDeque;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
@@ -67,6 +68,38 @@ public class FileLog {
     private final static String mtproto_tag = "MTProto";
 
     private static volatile FileLog Instance = null;
+
+    // In-memory ring buffer of recent log lines for on-device diagnostics (debug builds).
+    private static final int RING_BUFFER_SIZE = 400;
+    private static final ArrayDeque<String> ringBuffer = new ArrayDeque<>(RING_BUFFER_SIZE);
+
+    public static void addToRingBuffer(String line) {
+        synchronized (ringBuffer) {
+            if (ringBuffer.size() >= RING_BUFFER_SIZE) {
+                ringBuffer.pollFirst();
+            }
+            ringBuffer.addLast(line);
+        }
+    }
+
+    /** Returns the most recent log lines (oldest first), prefixed with a device info header. */
+    public static String getRecentLog() {
+        StringBuilder sb = new StringBuilder();
+        try {
+            sb.append("=== device: ").append(android.os.Build.MANUFACTURER).append(' ').append(android.os.Build.MODEL)
+              .append(" sdk=").append(android.os.Build.VERSION.SDK_INT)
+              .append(" ver=").append(BuildVars.BUILD_VERSION_STRING)
+              .append(" logs=").append(BuildVars.LOGS_ENABLED).append(" ===\n");
+        } catch (Exception ignore) {
+        }
+        synchronized (ringBuffer) {
+            for (String line : ringBuffer) {
+                sb.append(line).append('\n');
+            }
+        }
+        return sb.toString();
+    }
+
     public static FileLog getInstance() {
         FileLog localInstance = Instance;
         if (localInstance == null) {
@@ -402,6 +435,7 @@ public class FileLog {
         }
         ensureInitied();
         Log.e(tag, message, exception);
+        addToRingBuffer(dateFormatInstance().format(System.currentTimeMillis()) + " E/tmessages: " + message + "\n" + android.util.Log.getStackTraceString(exception));
         if (getInstance().streamWriter != null) {
             getInstance().logQueue.postRunnable(() -> {
                 try {
@@ -425,6 +459,7 @@ public class FileLog {
         }
         ensureInitied();
         Log.e(tag, message);
+        addToRingBuffer(dateFormatInstance().format(System.currentTimeMillis()) + " E/tmessages: " + message);
         if (getInstance().streamWriter != null) {
             getInstance().logQueue.postRunnable(() -> {
                 try {
@@ -583,6 +618,7 @@ public class FileLog {
         }
         ensureInitied();
         Log.d(tag, message);
+        addToRingBuffer(dateFormatInstance().format(System.currentTimeMillis()) + " D/tmessages: " + message);
         if (getInstance().streamWriter != null) {
             getInstance().logQueue.postRunnable(() -> {
                 try {
@@ -604,6 +640,7 @@ public class FileLog {
         }
         ensureInitied();
         Log.w(tag, message);
+        addToRingBuffer(dateFormatInstance().format(System.currentTimeMillis()) + " W/tmessages: " + message);
         if (getInstance().streamWriter != null) {
             getInstance().logQueue.postRunnable(() -> {
                 try {
@@ -614,6 +651,15 @@ public class FileLog {
                 }
             });
         }
+    }
+
+    // Timestamp formatter that works before init() has run (used by ring buffer).
+    private static FastDateFormat dateFormatInstance() {
+        FileLog logger = getInstance();
+        if (logger != null && logger.dateFormat != null) {
+            return logger.dateFormat;
+        }
+        return FastDateFormat.getInstance("dd.MM.yy hh:mm:ss.SSS", Locale.US);
     }
 
     public static void cleanupLogs() {

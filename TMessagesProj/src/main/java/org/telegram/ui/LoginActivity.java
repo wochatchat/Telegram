@@ -25,6 +25,7 @@ import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Dialog;
+import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
@@ -158,6 +159,7 @@ import org.telegram.ui.ActionBar.INavigationLayout;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ActionBar.ThemeDescription;
 import org.telegram.ui.Cells.CheckBoxCell;
+import org.telegram.ui.Cells.TextSettingsCell;
 import org.telegram.ui.Components.AlertsCreator;
 import org.telegram.ui.Components.AnimatedPhoneNumberEditText;
 import org.telegram.ui.Components.AvatarDrawable;
@@ -1459,6 +1461,46 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
         }
     }
 
+    /** Debug builds only: shows the recent in-memory log ring buffer with a copy button. */
+    private void showDebugLogDialog() {
+        if (getParentActivity() == null) {
+            return;
+        }
+        String log = FileLog.getRecentLog();
+        ScrollView scrollView = new ScrollView(getParentActivity());
+        TextView textView = new TextView(getParentActivity());
+        textView.setText(log);
+        textView.setTextIsSelectable(true);
+        textView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 12);
+        textView.setTypeface(Typeface.MONOSPACE);
+        textView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
+        int pad = AndroidUtilities.dp(16);
+        textView.setPadding(pad, pad, pad, pad);
+        scrollView.addView(textView, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT));
+        scrollView.setLayoutParams(new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, AndroidUtilities.dp(400)));
+        AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
+        builder.setTitle("Debug Log");
+        builder.setView(scrollView);
+        builder.setPositiveButton("Copy", (dialog, which) -> {
+            try {
+                ClipboardManager clipboard = (ClipboardManager) getParentActivity().getSystemService(Context.CLIPBOARD_SERVICE);
+                clipboard.setPrimaryClip(ClipData.newPlainText("log", log));
+                Toast.makeText(getParentActivity(), "Log copied", Toast.LENGTH_SHORT).show();
+            } catch (Exception e) {
+                FileLog.e(e);
+            }
+        });
+        builder.setNeutralButton("Refresh", (dialog, which) -> {
+            try {
+                dialog.dismiss();
+            } catch (Exception ignore) {
+            }
+            showDebugLogDialog();
+        });
+        builder.setNegativeButton("Close", null);
+        showDialog(builder.create());
+    }
+
     private void needShowProgress(int requestId) {
         needShowProgress(requestId, true);
     }
@@ -2497,6 +2539,15 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                 });
             }
 
+            if (BuildVars.DEBUG_VERSION && activityMode == MODE_LOGIN) {
+                TextSettingsCell debugLogCell = new TextSettingsCell(context);
+                debugLogCell.setText("Debug Log", false);
+                debugLogCell.setTextColor(Theme.getColor(Theme.key_text_RedRegular));
+                addView(debugLogCell, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.LEFT | Gravity.TOP, 16, 0, 16, 0));
+                bottomMargin -= 24;
+                debugLogCell.setOnClickListener(v -> showDebugLogDialog());
+            }
+
             if (bottomMargin > 0 && !AndroidUtilities.isSmallScreen()) {
                 Space bottomSpacer = new Space(context);
                 bottomSpacer.setMinimumHeight(AndroidUtilities.dp(bottomMargin));
@@ -2858,6 +2909,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
         @Override
         public void onNextPressed(String code) {
             if (getParentActivity() == null || nextPressed || isRequestingFirebaseSms) {
+                FileLog.d("[LoginFlow] onNextPressed blocked: parent=" + getParentActivity() + " nextPressed=" + nextPressed + " isRequestingFirebaseSms=" + isRequestingFirebaseSms);
                 return;
             }
 
@@ -3179,6 +3231,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
             phoneInputData.phoneNumber = "+" + codeField.getText() + " " + phoneField.getText();
             phoneInputData.country = currentCountry;
             phoneInputData.patterns = phoneFormatMap.get(codeField.getText().toString());
+            FileLog.d("[LoginFlow] sendCode request sent: phone=+" + codeField.getText() + " " + phoneField.getText() + " testBackend=" + testBackend + " isTestBackendNow=" + getConnectionsManager().isTestBackend());
             int reqId = ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
                 nextPressed = false;
                 if (error == null) {
@@ -3236,7 +3289,10 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                         } else if (error.text.startsWith("FLOOD_WAIT")) {
                             needShowAlert(getString(R.string.RestorePasswordNoEmailTitle), getString("FloodWait", R.string.FloodWait));
                         } else if (error.code != -1000) {
+                            FileLog.d("[LoginFlow] sendCode error: code=" + error.code + " text=" + error.text);
                             AlertsCreator.processError(currentAccount, error, LoginActivity.this, req, phoneInputData.phoneNumber);
+                        } else {
+                            FileLog.e("[LoginFlow] sendCode silent network error (-1000), no UI feedback shown. error=" + error.code + " " + error.text);
                         }
                     }
                 }
