@@ -115,6 +115,18 @@ public class PrefetchSourcesActivity extends BaseFragment {
         return true;
     }
 
+    /** Keep up with theme changes like native list screens do. */
+    private void applyThemeColors() {
+        if (fragmentView == null) {
+            return;
+        }
+        actionBar.setTitleColor(getThemedColor(Theme.key_windowBackgroundWhiteBlackText));
+        actionBar.setItemsColor(getThemedColor(Theme.key_windowBackgroundWhiteBlackText), false);
+        fragmentView.setBackgroundColor(getThemedColor(Theme.key_windowBackgroundGray));
+        listView.setBackgroundColor(getThemedColor(Theme.key_windowBackgroundGray));
+        listView.invalidateViews();
+    }
+
     @Override
     public View createView(Context context) {
         actionBar.setBackButtonDrawable(new BackDrawable(false));
@@ -196,11 +208,11 @@ public class PrefetchSourcesActivity extends BaseFragment {
             return true;
         });
 
-        fragmentView = new FrameLayout(context);
-        fragmentView.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundGray));
+        fragmentView = new ColorableFrameLayout(context, this::applyThemeColors);
         ((FrameLayout) fragmentView).addView(emptyView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
         ((FrameLayout) fragmentView).addView(listView, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
+        applyThemeColors();
         return fragmentView;
     }
 
@@ -627,6 +639,21 @@ public class PrefetchSourcesActivity extends BaseFragment {
     // ------------------------------------------------------------------
     // Adapter
     // ------------------------------------------------------------------
+
+    /** FrameLayout that re-applies themed colors whenever the active theme changes. */
+    private static class ColorableFrameLayout extends FrameLayout implements Theme.Colorable {
+        private final Runnable apply;
+
+        ColorableFrameLayout(Context context, Runnable apply) {
+            super(context);
+            this.apply = apply;
+        }
+
+        @Override
+        public void updateColors() {
+            apply.run();
+        }
+    }
 
     private class ListAdapter extends RecyclerListView.SelectionAdapter {
 

@@ -186,10 +186,10 @@ public class PrefetchSettingsActivity extends BaseFragment {
             }
         });
 
-        fragmentView = new FrameLayout(context);
-        fragmentView.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundGray));
+        fragmentView = new ColorableFrameLayout(context, this::applyThemeColors);
         ((FrameLayout) fragmentView).addView(listView, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
+        applyThemeColors();
         return fragmentView;
     }
 
@@ -197,6 +197,18 @@ public class PrefetchSettingsActivity extends BaseFragment {
     public void onFragmentDestroy() {
         super.onFragmentDestroy();
         PrefetchStore.save(currentAccount, config);
+    }
+
+    /** Keep up with theme changes like native settings screens do. */
+    private void applyThemeColors() {
+        if (fragmentView == null) {
+            return;
+        }
+        actionBar.setTitleColor(getThemedColor(Theme.key_windowBackgroundWhiteBlackText));
+        actionBar.setItemsColor(getThemedColor(Theme.key_windowBackgroundWhiteBlackText), false);
+        fragmentView.setBackgroundColor(getThemedColor(Theme.key_windowBackgroundGray));
+        listView.invalidateViews();
+        listView.setBackgroundColor(getThemedColor(Theme.key_windowBackgroundGray));
     }
 
     // ------------------------------------------------------------------
@@ -339,6 +351,21 @@ public class PrefetchSettingsActivity extends BaseFragment {
         return PrefetchConfig.formatSpeed(bytesPerSec);
     }
 
+    /** FrameLayout that re-applies themed colors whenever the active theme changes. */
+    private static class ColorableFrameLayout extends FrameLayout implements Theme.Colorable {
+        private final Runnable apply;
+
+        ColorableFrameLayout(Context context, Runnable apply) {
+            super(context);
+            this.apply = apply;
+        }
+
+        @Override
+        public void updateColors() {
+            apply.run();
+        }
+    }
+
     private class ListAdapter extends RecyclerListView.SelectionAdapter {
 
         private final Context context;
@@ -382,20 +409,20 @@ public class PrefetchSettingsActivity extends BaseFragment {
             switch (viewType) {
                 case VIEW_TYPE_HEADER:
                     view = new HeaderCell(context);
-                    view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+                    view.setBackgroundColor(getThemedColor(Theme.key_windowBackgroundWhite));
                     break;
                 case VIEW_TYPE_CHECK:
                     view = new TextCheckCell(context);
-                    view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+                    view.setBackgroundColor(getThemedColor(Theme.key_windowBackgroundWhite));
                     break;
                 case VIEW_TYPE_SETTINGS:
                     view = new TextSettingsCell(context);
-                    view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+                    view.setBackgroundColor(getThemedColor(Theme.key_windowBackgroundWhite));
                     break;
                 case VIEW_TYPE_INFO:
                 default:
                     TextInfoPrivacyCell infoCell = new TextInfoPrivacyCell(context);
-                    infoCell.setBackgroundDrawable(Theme.getThemedDrawable(context, R.drawable.greydivider_bottom, Theme.getColor(Theme.key_windowBackgroundGrayShadow, getResourceProvider())));
+                    infoCell.setBackgroundDrawable(Theme.getThemedDrawable(context, R.drawable.greydivider_bottom, getThemedColor(Theme.key_windowBackgroundGrayShadow)));
                     view = infoCell;
                     break;
             }

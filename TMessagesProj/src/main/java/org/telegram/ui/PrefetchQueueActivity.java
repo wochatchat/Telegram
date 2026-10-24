@@ -10,6 +10,7 @@ import android.content.Context;
 import android.graphics.PorterDuff;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.TypedValue;
 import android.view.Gravity;
 import android.text.TextUtils;
 import android.view.Gravity;
@@ -136,6 +137,18 @@ public class PrefetchQueueActivity extends BaseFragment implements NotificationC
         getNotificationCenter().removeObserver(this, NotificationCenter.fileLoadProgressChanged);
     }
 
+    /** Keep up with theme changes like native list screens do. */
+    private void applyThemeColors() {
+        if (fragmentView == null) {
+            return;
+        }
+        actionBar.setTitleColor(getThemedColor(Theme.key_windowBackgroundWhiteBlackText));
+        actionBar.setItemsColor(getThemedColor(Theme.key_windowBackgroundWhiteBlackText), false);
+        fragmentView.setBackgroundColor(getThemedColor(Theme.key_windowBackgroundGray));
+        listView.setBackgroundColor(getThemedColor(Theme.key_windowBackgroundGray));
+        listView.invalidateViews();
+    }
+
     @Override
     public View createView(Context context) {
         actionBar.setBackButtonDrawable(new BackDrawable(false));
@@ -192,11 +205,11 @@ public class PrefetchQueueActivity extends BaseFragment implements NotificationC
             return true;
         });
 
-        fragmentView = new FrameLayout(context);
-        fragmentView.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundGray));
+        fragmentView = new ColorableFrameLayout(context, this::applyThemeColors);
         ((FrameLayout) fragmentView).addView(emptyView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
         ((FrameLayout) fragmentView).addView(listView, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
+        applyThemeColors();
         return fragmentView;
     }
 
@@ -716,6 +729,21 @@ public class PrefetchQueueActivity extends BaseFragment implements NotificationC
     // Adapter + 队列行（标题 / 状态 / 进度条 / 分隔线）
     // ------------------------------------------------------------------
 
+    /** FrameLayout that re-applies themed colors whenever the active theme changes. */
+    private static class ColorableFrameLayout extends FrameLayout implements Theme.Colorable {
+        private final Runnable apply;
+
+        ColorableFrameLayout(Context context, Runnable apply) {
+            super(context);
+            this.apply = apply;
+        }
+
+        @Override
+        public void updateColors() {
+            apply.run();
+        }
+    }
+
     private class ListAdapter extends RecyclerListView.SelectionAdapter {
 
         private final Context context;
@@ -742,7 +770,7 @@ public class PrefetchQueueActivity extends BaseFragment implements NotificationC
                 view = new QueueCell(context);
             } else {
                 TextInfoPrivacyCell infoCell = new TextInfoPrivacyCell(context);
-                infoCell.setBackgroundDrawable(Theme.getThemedDrawable(context, R.drawable.greydivider_bottom, Theme.getColor(Theme.key_windowBackgroundGrayShadow, getResourceProvider())));
+                infoCell.setBackgroundDrawable(Theme.getThemedDrawable(context, R.drawable.greydivider_bottom, getThemedColor(Theme.key_windowBackgroundGrayShadow)));
                 view = infoCell;
             }
             view.setLayoutParams(new RecyclerView.LayoutParams(RecyclerView.LayoutParams.MATCH_PARENT, RecyclerView.LayoutParams.WRAP_CONTENT));
@@ -779,6 +807,7 @@ public class PrefetchQueueActivity extends BaseFragment implements NotificationC
 
         QueueCell(Context context) {
             super(context);
+            setBackgroundColor(getThemedColor(Theme.key_windowBackgroundWhite));
             setBackgroundDrawable(Theme.getSelectorDrawable(false));
 
             LinearLayout content = new LinearLayout(context);
@@ -787,30 +816,30 @@ public class PrefetchQueueActivity extends BaseFragment implements NotificationC
             content.setPadding(pad, AndroidUtilities.dp(9), pad, AndroidUtilities.dp(10));
 
             titleTextView = new TextView(context);
-            titleTextView.setTextSize(16);
+            titleTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
             titleTextView.setTypeface(AndroidUtilities.bold());
-            titleTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
+            titleTextView.setTextColor(getThemedColor(Theme.key_windowBackgroundWhiteBlackText));
             titleTextView.setSingleLine(true);
             titleTextView.setEllipsize(TextUtils.TruncateAt.END);
             content.addView(titleTextView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
 
             statusTextView = new TextView(context);
-            statusTextView.setTextSize(13);
-            statusTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText));
+            statusTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 13);
+            statusTextView.setTextColor(getThemedColor(Theme.key_windowBackgroundWhiteGrayText));
             statusTextView.setSingleLine(true);
             statusTextView.setEllipsize(TextUtils.TruncateAt.END);
             content.addView(statusTextView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 0, 3, 0, 0));
 
             progressBar = new ProgressBar(context, null, android.R.attr.progressBarStyleHorizontal);
             progressBar.setMax(100);
-            progressBar.getProgressDrawable().setColorFilter(Theme.getColor(Theme.key_windowBackgroundWhiteValueText), PorterDuff.Mode.SRC_IN);
+            progressBar.getProgressDrawable().setColorFilter(getThemedColor(Theme.key_windowBackgroundWhiteValueText), PorterDuff.Mode.SRC_IN);
             progressBar.setVisibility(GONE);
             content.addView(progressBar, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, AndroidUtilities.dp(3), 0, 6, 0, 0));
 
             addView(content, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
 
             divider = new View(context);
-            divider.setBackgroundColor(Theme.getColor(Theme.key_divider));
+            divider.setBackgroundColor(getThemedColor(Theme.key_divider));
             addView(divider, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 1 / (float) AndroidUtilities.density, Gravity.BOTTOM | Gravity.LEFT, 16, 0, 0, 0));
         }
 
