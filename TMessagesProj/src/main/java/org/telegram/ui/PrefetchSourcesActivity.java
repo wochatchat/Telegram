@@ -35,8 +35,8 @@ import org.telegram.ui.ActionBar.BackDrawable;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.BottomSheet;
 import org.telegram.ui.ActionBar.Theme;
-import org.telegram.ui.Cells.CheckBoxCell;
 import org.telegram.ui.Cells.TextInfoPrivacyCell;
+import org.telegram.ui.Cells.UserCell;
 import org.telegram.ui.Components.EmptyTextProgressView;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.NumberTextView;
@@ -679,7 +679,8 @@ public class PrefetchSourcesActivity extends BaseFragment {
             View view;
             switch (viewType) {
                 case VIEW_TYPE_CHAT:
-                    view = new CheckBoxCell(context, 1);
+                    // 头像 + 名称 + 勾选框（CheckBoxSquare 在右侧），用群组/频道 logo 便于区分来源
+                    view = new UserCell(context, 7, 2, false);
                     break;
                 case VIEW_TYPE_INFO:
                 default:
@@ -696,13 +697,15 @@ public class PrefetchSourcesActivity extends BaseFragment {
         public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
             switch (holder.getItemViewType()) {
                 case VIEW_TYPE_CHAT: {
-                    CheckBoxCell cell = (CheckBoxCell) holder.itemView;
+                    UserCell cell = (UserCell) holder.itemView;
                     PrefetchSourcesLogic.Entry e = visibleEntries.get(position);
                     boolean checked = actionModeOpen
                             ? pendingSelection.contains(e.dialogId)
                             : e.whitelisted;
                     boolean divider = position != visibleEntries.size() - 1 || !loaded;
-                    cell.setText(e.title, valueFor(e), checked, divider);
+                    TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(-e.dialogId);
+                    cell.setData(chat, null, e.title, valueFor(e), 0, divider);
+                    cell.setChecked(checked, false);
                     break;
                 }
                 case VIEW_TYPE_INFO:

@@ -49,6 +49,8 @@ import org.telegram.ui.Cells.LanguageCell;
 import org.telegram.ui.Cells.NotificationsCheckCell;
 import org.telegram.ui.Cells.ShadowSectionCell;
 import org.telegram.ui.Cells.TextCell;
+import org.telegram.prefetch.PrefetchConfig;
+import org.telegram.prefetch.PrefetchStore;
 import org.telegram.ui.Cells.TextCheckCell;
 import org.telegram.ui.Cells.TextInfoPrivacyCell;
 import org.telegram.ui.Cells.TextSettingsCell;
@@ -148,6 +150,10 @@ public class DataSettingsActivity extends BaseFragment {
             storageNumRow = rowCount++;
         }
         usageSection2Row = rowCount++;
+        // 「自动缓存视频」置顶展示：这是数据与存储页最常用的后台任务入口
+        prefetchSectionRow = rowCount++;
+        prefetchRow = rowCount++;
+        prefetchDividerRow = rowCount++;
         mediaDownloadSectionRow = rowCount++;
         mobileRow = rowCount++;
         wifiRow = rowCount++;
@@ -204,10 +210,6 @@ public class DataSettingsActivity extends BaseFragment {
         proxySection2Row = rowCount++;
         clearDraftsRow = rowCount++;
         clearDraftsSectionRow = rowCount++;
-
-        prefetchSectionRow = rowCount++;
-        prefetchRow = rowCount++;
-        prefetchDividerRow = rowCount++;
 
         if (listAdapter != null && fullNotify) {
             listAdapter.notifyDataSetChanged();
@@ -738,7 +740,13 @@ public class DataSettingsActivity extends BaseFragment {
                         textCell.setIcon(0);
                         textCell.setText(LocaleController.getString(R.string.PrivacyDeleteCloudDrafts), false);
                     } else if (position == prefetchRow) {
-                        textCell.setTextAndIcon(LocaleController.getString(R.string.BackgroundPrefetch), R.drawable.msg2_data, true);
+                        PrefetchConfig cfg = PrefetchStore.load(currentAccount);
+                        textCell.setTextAndValue(
+                                LocaleController.getString(R.string.BackgroundPrefetch),
+                                cfg.enabled
+                                        ? LocaleController.getString(R.string.PrefetchEnabledShort)
+                                        : LocaleController.getString(R.string.PrefetchDisabledShort),
+                                true);
                     }
                     break;
                 }
@@ -951,7 +959,7 @@ public class DataSettingsActivity extends BaseFragment {
                 return 4;
             } else if (position == mobileRow || position == wifiRow || position == roamingRow || position == saveToGalleryGroupsRow || position == saveToGalleryPeerRow || position == saveToGalleryChannelsRow) {
                 return 5;
-            } else if (position == storageUsageRow || position == dataUsageRow || position == storageNumRow || position == prefetchRow) {
+            } else if (position == storageUsageRow || position == dataUsageRow || position == storageNumRow) {
                 return 6;
             } else {
                 return 1;

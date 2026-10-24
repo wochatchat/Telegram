@@ -3548,8 +3548,13 @@
     <string name="LoginOrSingInWithGoogle">or</string>
     <!--data settings-->
     <string name="DataSettings">Data and Storage</string>
-    <string name="BackgroundPrefetch">后台视频预下载</string>
-    <string name="BackgroundPrefetchInfo">在 Wi-Fi 下提前下载你选定聊天和频道里的视频，打开时即可秒开。你可以选择来源、查看队列并控制流量。</string>
+    <string name="BackgroundPrefetch">自动缓存视频</string>
+    <string name="BackgroundPrefetchInfo">在后台持续把选定聊天和频道里的视频缓存到本地，打开时即可秒开。缓存服务会常驻运行，可在下方选择来源、查看队列并限制流量。</string>
+    <string name="PrefetchServiceIdle">正在后台待命，有新视频时自动缓存</string>
+    <string name="PrefetchServiceActive">正在缓存 %1$d 个视频</string>
+    <string name="PrefetchEnabledShort">已开启</string>
+    <string name="PrefetchDisabledShort">已关闭</string>
+    <string name="PrefetchChannelName">自动缓存视频</string>
     <string name="PrefetchSectionGeneral">通用</string>
     <string name="PrefetchConcurrency">同时下载数量</string>
     <string name="PrefetchReservedSlots">为手动下载保留的任务数</string>

@@ -12,6 +12,9 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 
+import org.telegram.prefetch.PrefetchService;
+import org.telegram.prefetch.PrefetchStore;
+
 public class AppStartReceiver extends BroadcastReceiver {
 
     public void onReceive(Context context, Intent intent) {
@@ -23,6 +26,17 @@ public class AppStartReceiver extends BroadcastReceiver {
                     SharedConfig.saveConfig();
                 }
                 ApplicationLoader.startPushService();
+                // 开机后若「自动缓存视频」开着，重新拉起常驻缓存服务
+                try {
+                    for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
+                        if (UserConfig.getInstance(a).isClientActivated() && PrefetchStore.load(a).enabled) {
+                            PrefetchService.start(a);
+                            break;
+                        }
+                    }
+                } catch (Throwable e) {
+                    FileLog.e(e);
+                }
             });
         }
     }

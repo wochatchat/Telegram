@@ -51,6 +51,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class PrefetchScheduler extends BaseController {
 
     private static final long TICK_INTERVAL = 15 * 60 * 1000L;
+    /** 收到新消息后延迟多久触发一次提前扫描（合并短时间内的多条消息） */
+    private static final long NEW_MESSAGE_TICK_DELAY = 30 * 1000L;
     private static final int MAX_CANDIDATES_PER_CHAT = 100;
 
     private static volatile PrefetchScheduler[] instances = new PrefetchScheduler[UserConfig.MAX_ACCOUNT_COUNT];
@@ -183,15 +185,60 @@ public class PrefetchScheduler extends BaseController {
         started = true;
         registerReceivers();
         registerConfigListener();
+        registerMessageListener();
         restorePrefetchFlags();
+        // 总开关开着才拉起常驻服务（服务自己也会校验一次配置）
+        if (PrefetchStore.load(currentAccount).enabled) {
+            PrefetchService.start();
+        }
         scheduleNext();
     }
 
     public void stop() {
         started = false;
         mainHandler.removeCallbacks(tickRunnable);
+        mainHandler.removeCallbacks(newMessagesRunnable);
         unregisterReceivers();
         unregisterConfigListener();
+        unregisterMessageListener();
+        PrefetchService.stop();
+    }
+
+    /**
+     * 新消息到达时提前触发扫描（把 15 分钟定时器重置为 30 秒后的一次扫描），
+     * 让常驻服务真正"有新视频就缓存"，而不是等固定轮询。
+     */
+    private final Runnable newMessagesRunnable = new Runnable() {
+        @Override
+        public void run() {
+            tick();
+        }
+    };
+
+    private final NotificationCenter.NotificationCenterDelegate messageDelegate = new NotificationCenter.NotificationCenterDelegate() {
+        @Override
+        public void didReceivedNotification(int id, int account, Object... args) {
+            if (!started) {
+                return;
+            }
+            mainHandler.removeCallbacks(newMessagesRunnable);
+            mainHandler.postDelayed(newMessagesRunnable, NEW_MESSAGE_TICK_DELAY);
+        }
+    };
+
+    private void registerMessageListener() {
+        try {
+            getNotificationCenter().addObserver(messageDelegate, NotificationCenter.didReceiveNewMessages);
+        } catch (Exception e) {
+            FileLog.e(e);
+        }
+    }
+
+    private void unregisterMessageListener() {
+        try {
+            getNotificationCenter().removeObserver(messageDelegate, NotificationCenter.didReceiveNewMessages);
+        } catch (Exception ignore) {
+        }
     }
 
     /**
@@ -320,8 +367,17 @@ public class PrefetchScheduler extends BaseController {
         PrefetchScorer.Env env = buildEnv(cfg);
         String gate = PrefetchScorer.checkHardGates(cfg, env);
         lastGateReason = gate;
+        if ("disabled".equals(gate)) {
+            // 总开关关闭：暂停在途任务并撤掉常驻服务，不占通知栏也不耗电
+            pauseActivePrefetch();
+            PrefetchService.stop();
+            return;
+        }
+        // 开关打开时确保常驻服务在跑（用户刚开启 / 系统回收后自愈）
+        PrefetchService.start();
         if (gate != null) {
             pauseActivePrefetch();
+            PrefetchService.refresh();
             return;
         }
         resumeActivePrefetch();
