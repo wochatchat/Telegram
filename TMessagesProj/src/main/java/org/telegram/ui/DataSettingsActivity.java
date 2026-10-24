@@ -116,6 +116,7 @@ public class DataSettingsActivity extends BaseFragment {
     private int saveToGalleryDividerRow;
 
     private int prefetchSectionRow;
+    /** 自动缓存视频入口（数据页顶部独立一行；-1 表示不显示标题） */
     @Keep
     private int prefetchRow;
     private int prefetchDividerRow;
@@ -151,9 +152,9 @@ public class DataSettingsActivity extends BaseFragment {
         }
         usageSection2Row = rowCount++;
         // 「自动缓存视频」置顶展示：这是数据与存储页最常用的后台任务入口
-        prefetchSectionRow = rowCount++;
         prefetchRow = rowCount++;
         prefetchDividerRow = rowCount++;
+        prefetchSectionRow = -1;
         mediaDownloadSectionRow = rowCount++;
         mobileRow = rowCount++;
         wifiRow = rowCount++;
